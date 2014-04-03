@@ -13,6 +13,8 @@ declare -a results
 declare -a directories
 packageCSVFileStructure=("path" "name" "tests" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
 "testsCount" "vignettes" "index")
+results=("path" "name" "tests" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
+"testsCount" "vignettes" "index")
 isARPacket=0
 #functions
 
@@ -51,10 +53,11 @@ function checkFoldersNotEmpty(){
   # get all the folders in the folder
   for folder in "${folders[@]}"; do
     index=$(getArrayIndex "$folder")
-    if [ -d "$folder" ]; then
-      fileCount=$(getNumberFiles "$folder")
+    if [ -d "$1/$folder" ]; then
+      fileCount=$(getNumberFiles "$1/$folder")
+      echo "index :$index"
       if [[ $fileCount -gt 0 ]]; then
- 	 results[$index]=fileCount
+ 	 results[$index]=$fileCount
       fi
     else
      results[$index]=0
@@ -74,7 +77,7 @@ function containsMandatoryFiles(){
 }
 
 function getNumberFiles(){
-  return "$(ls $1 -l | grep ^- | wc -l)"
+  echo "$(ls $1 -l | grep ^- | wc -l)"
 }
 
 function writePackageCSVFile(){
