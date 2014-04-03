@@ -13,6 +13,7 @@ declare -a results
 declare -a directories
 packageCSVFileStructure=("path" "name" "tests" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
 "testsCount" "vignettes" "index")
+isARPacket=0
 #functions
 
 function getArrayIndex(){
@@ -32,16 +33,16 @@ function getAllDirectories(){
 }
 #check if a variable is in a array
 function arrayContains(){ 
-  tab=$1
+  declare -a tab=("${!1}")
   seeking=$2
   in=0
   for element in "${tab[@]}"; do
-    if [[ "$element" == "$seeking" ]]; then
+    if [ "$element" == "$seeking" ]; then
       in=1
       break
     fi
   done
-  return $in
+  echo $in
 }
 
 #check if subfolder exist and if yes if it's not empty
@@ -51,34 +52,25 @@ function checkFoldersNotEmpty(){
   for folder in "${folders[@]}"; do
     index=$(getArrayIndex "$folder")
     if [ -d "$folder" ]; then
-      fileCount=getNumberFiles "$folder"
-      if [[ $fileCount -lt 1 ]]; then
- 	echo "$folder is empty"
-      else
-       results[$index]=fileCount
+      fileCount=$(getNumberFiles "$folder")
+      if [[ $fileCount -gt 0 ]]; then
+ 	 results[$index]=fileCount
       fi
     else
      results[$index]=0
-     echo "$folder doest not exist"
     fi
   done
 }
 
 #check if it contains the mandatory files in the main folder
 function containsMandatoryFiles(){
-  echo "check mandatory files $1"
   # get all the files in the folder
   allFiles=( $(find "$1" -maxdepth 1 -type f) )
   containsMandatoryFiles=1
   for file in "${mandatoryFiles[@]}"; do
-    containsMandatoryFiles=$(arrayContains "$allFiles" "$file")
+    containsMandatoryFiles=$(arrayContains allFiles[@] "$1/$file")
   done
-
-  if [ "$containsMandatoryFiles" = 1 ] ; then
-    echo 'all mandatory files are present'
-  else
-    echo 'mandatory files missing'
-  fi
+  echo $containsMandatoryFiles
 }
 
 function getNumberFiles(){
@@ -90,10 +82,8 @@ function writePackageCSVFile(){
   line=""
   for folder in "${packageCSVFileStructure[@]}"; do
     index=$(getArrayIndex "$folder")
-    echo ${results[$index]}
     if [[  ${results[$index]} != "" ]] ; then
         line+="${results[$index]};"
-	echo "$line"
     fi
   done 
   echo "$line" >> "$packageFileName"
@@ -107,22 +97,23 @@ function cleanResultFiles(){
 
 #check if a folder is a R packet or not
 function processFolder() {
-  containsMandatoryFiles "$1"
- 
-  checkFoldersNotEmpty "$1"
-
-  writePackageCSVFile
+  echo "Processing folder : ${results[0]}"
+  isARPacket=$(containsMandatoryFiles "$1")
+  if [ "$isARPacket" = 1 ]; then
+    checkFoldersNotEmpty "$1"
+    writePackageCSVFile
+  fi
+  echo "-------------------------------------"
+  echo "-------------------------------------"
 }
 
 
 # get all the directory
 cleanResultFiles
 getAllDirectories "$baseFolderPath"
-echo "${directories[@]}"
 # for each directory
 for dir in "${directories[@]}"; do
   results[0]="$dir"
   results[1]=$(basename "$dir")
-  echo " aaaaaaaaaaaaaaa : ${results[0]}"
   processFolder "$dir"
 done
