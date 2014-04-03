@@ -157,10 +157,38 @@ function writePackageCSVFile(){
   echo "$line" >> "$packageFileName"
 }
 
+function writeInstFile(){
+  echo 'write inst file'
+  InstFileName="${results[1]}.inst"
+  line=""
+  dir="$1/inst"
+  if [ -d "$dir" ]; then
+    allFiles=( $(find "$dir" -type f) )
+    for file in "${allFiles[@]}"; do
+      line=$(basename "$file")
+      echo "$line" >> "$InstFileName"
+    done
+  else
+    touch "$InstFileName"
+  fi
+}
+
+function writeDSCFile(){
+  DSCFileName="${results[1]}.dsc"
+  line=$(head -n 1 "$1/DESCRIPTION")
+  stringReplace=,
+  line="${line/:/$stringReplace}"
+  line="${line/ /}"
+  echo "$line" >> "$DSCFileName"
+}
+
+#delete all the files before starting
 function cleanResultFiles(){
   if [ -f "$packageFileName" ]; then
    rm "$packageFileName"
   fi
+  rm *.inst
+  rm *.dsc
 }
 
 #check if a folder is a R packet or not
@@ -182,6 +210,8 @@ function processFolder() {
     results[18]=$(checkFileExistAndNotEmpty "$1" "LICENSE")
     results[19]=$(checkFileExistAndNotEmpty "$1" "NEWS")
     writePackageCSVFile
+    writeInstFile "$1"
+    writeDSCFile  "$1"
   fi
   echo "-------------------------------------"
   echo "-------------------------------------"
