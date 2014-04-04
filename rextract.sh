@@ -277,7 +277,6 @@ elif [ $1 = "--help" ]; then
   echo ""
 else
  baseFolderPath=$1
- baseFolderName=$(basename "$folderPath")
  processAllFolders
 fi
 
