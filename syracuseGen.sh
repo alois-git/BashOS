@@ -6,7 +6,6 @@
 #usage		 :bash syracuseGen.sh
 #==============================================================================
 
-
 function generate(){
   number=$1
   while [ "$number" -gt 0 ]; do

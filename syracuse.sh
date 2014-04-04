@@ -7,6 +7,7 @@
 #==============================================================================
 declare -a suiteNumbers
 
+#Take a integer N > 0 and return next integer
 function syra(){
   number="$1"
   if [ $((number%2)) -eq 0 ]; then
@@ -16,32 +17,55 @@ function syra(){
   fi
 }
 
+#Create an array with the syracuse suite for one number
 function syraSuite(){
+  declare -a numberArray
   number=$1
   i=0
   while [ "$number" -ne 1 ]; do
+    numberArray[$i]="$number"
     number=$(syra "$number")
-    suiteNumbers[$i]="$number"
     i=$((i+1))
+  done
+  numberArray[$i]="$number"
+  echo "${numberArray[@]}"
+}
+
+function calculateSyraSuiteForNumbers(){
+  count=$1
+  for ((i=1; i<=count; i=i+1)); do 
+    array=$(syraSuite $i)
+    suiteNumbers[$i]="${array[@]}"
   done
 }
 
+#Generate DOT file with all the syracuse suite inside
 function generateDOT(){
+  echo "strict digraph monGraph {"
   line=""
-  count="${#suiteNumbers[@]}"
-  i=1
-  echo "digraph monGraph {"
   for number in "${suiteNumbers[@]}"; do
-    if [ $i -lt $count ]; then
-     line+="$number -> "
-    else
-     line+="$number;"
-    fi
-    i=$((i+1))
+    line=$(generateDOTRow ${number[@]} )
+    echo "$line"
   done
+  echo "}" 
+}
+#Generate a row of the DOT file with on syracuse suite
+function generateDOTRow(){
+  line=""
+  tab=($@)
+  count="${#tab[@]}"	
+  count=$(($count-2))
+  if [[ count -eq 0 ]]; then
+    line+="2 -> "
+  else
+    for ((i=0; i<count; i=i+2)); do 
+      next=$(($i+1))
+      line+=""${tab[$i]}" -> "${tab[$next]}" -> "
+    done
+  fi
+  line+="1;"
   echo "$line"
-  echo "}"
 }
 
-syraSuite $1
+calculateSyraSuiteForNumbers $1
 generateDOT
