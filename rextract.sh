@@ -1,5 +1,14 @@
 #!/bin/bash
-#Variable setup
+#title           :rextract.sh
+#description     :Detect R packet folder and write their characteristics in files.
+#author		 :Alois paulus
+#date            :04/04/2014
+#usage		 :bash rextract.sh
+#==============================================================================
+
+#----------#
+# Variables
+#----------#
 packageFileName="package.csv"
 mandatoryFiles=('DESCRIPTION' 'NAMESPACE')
 folders=("R" "data" "demo" "exec" "inst" "man" "po" "src" "tests" "tools" "vignettes")
@@ -8,11 +17,17 @@ declare -a results
 declare -a directories
 packageCSVFileStructure=("path" "name" "testsYN" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
 "tests" "vignettes" "index" "licence" "license" "news")
-results=("path" "name" "tests" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
-"testsCount" "vignettes" "index" "licence" "license" "news")
+results=("path" "name" "testsYN" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
+"tests" "vignettes" "index" "licence" "license" "news")
 isARPacket=0
+#---------------#
+# End Variables
+#---------------#
 
-#functions
+
+#-----------#
+# Functions
+#-----------#
 function getArrayIndex(){
 value=$1
 for (( i = 0; i < ${#packageCSVFileStructure[@]}; i++ )); do
@@ -22,13 +37,13 @@ for (( i = 0; i < ${#packageCSVFileStructure[@]}; i++ )); do
 done
 }
 
-#get all directory of a directory except current dir and hidden dir
+#get all directoris of a directory except current dir and hidden dir
 #recursive
 function getAllDirectories(){
   directories=( $(find "$1" ! -path '*/\.*' ! -path "$1"  -type d) )
 }
 
-#check if a variable is in a array
+#check if an array contains a element
 function arrayContains(){ 
   declare -a tab=("${!1}")
   seeking=$2
@@ -41,7 +56,8 @@ function arrayContains(){
   done
   echo $in
 }
-#get total text line number from .r files in R folder
+
+#return total text line number from .r files in R folder
 function getRSize(){
   count=0
   if [ -d "$1/R" ]; then
@@ -53,7 +69,8 @@ function getRSize(){
   fi
   echo "$count"
 }
-#get total text line number from text files in src folder
+
+#return total text line number from text files in src folder
 function getSrcSize(){
   count=0
   dir="$1/src" 
@@ -66,7 +83,7 @@ function getSrcSize(){
   fi
   echo "$count"
 }
-
+#return number of file in the data directory
 function getDataFileCount(){
    dir="$1/data" 
    if [ -d "$dir" ]; then
@@ -75,7 +92,7 @@ function getDataFileCount(){
    fi
 }
 
-#get the file count with specific extension
+#return number of files of a specific extension 
 #param1 : folder
 #param2 : extension
 function getFileCount(){
@@ -86,6 +103,7 @@ function getFileCount(){
    fi
 }
 
+#check if the test folder exist and is not empty
 function checkTestFolderExist(){
   if [[ -d "$1/tests" ]]; then
    fileCount=$(getNumberFiles "$1/tests")
@@ -99,6 +117,7 @@ function checkTestFolderExist(){
   fi
 }
 
+#check if a file exist and is not empty
 function checkFileExistAndNotEmpty(){
   file="$1/$2"
   if [[ -f "$file" ]]; then
@@ -113,17 +132,24 @@ function checkFileExistAndNotEmpty(){
   fi
 }
 
+#return the number of files in a directory
+function getNumberFiles(){
+  number=0
+  if [ -d "$1" ]; then
+    allFiles=( $(find "$1" -type f) )
+    number="${#allFiles[@]}"
+  fi
+  echo "$number"
+}
+
 #check if subfolder exist and if yes if it's not empty
-function checkFoldersNotEmpty(){
-  echo "check folder empty $1"
+function checkFolders(){
   # get all the folders in the folder
   for folder in "${folders[@]}"; do
     index=$(getArrayIndex "$folder")
     if [ -d "$1/$folder" ]; then
       fileCount=$(getNumberFiles "$1/$folder")
-      if [[ $fileCount -gt 0 ]]; then
- 	 results[$index]=$fileCount
-      fi
+      results[$index]=$fileCount
     else
      results[$index]=0
     fi
@@ -141,12 +167,8 @@ function containsMandatoryFiles(){
   echo $containsMandatoryFiles
 }
 
-function getNumberFiles(){
-  echo "$(ls $1 -l | grep ^- | wc -l)"
-}
-
 function writePackageCSVFile(){
-  echo 'write package CSV file'
+  #echo 'Writing in package.csv'
   line=""
   for folder in "${packageCSVFileStructure[@]}"; do
     index=$(getArrayIndex "$folder")
@@ -158,7 +180,7 @@ function writePackageCSVFile(){
 }
 
 function writeInstFile(){
-  echo 'write inst file'
+  #echo 'Writing inst file'
   InstFileName="${results[1]}.inst"
   line=""
   dir="$1/inst"
@@ -174,6 +196,7 @@ function writeInstFile(){
 }
 
 function writeDSCFile(){
+  #echo 'Writing dsc file'
   DSCFileName="${results[1]}.dsc"
   line=$(head -n 1 "$1/DESCRIPTION")
   stringReplace=,
@@ -193,10 +216,10 @@ function cleanResultFiles(){
 
 #check if a folder is a R packet or not
 function processFolder() {
-  echo "Processing folder : ${results[0]}"
+  #echo "Processing folder : ${results[0]}"
   isARPacket=$(containsMandatoryFiles "$1")
   if [ "$isARPacket" = 1 ]; then
-    checkFoldersNotEmpty "$1"
+    checkFolders "$1"
     results[2]=$(checkTestFolderExist "$1")
     results[7]=$(getSrcSize "$1")
     results[4]=$(getRSize "$1") 
@@ -213,8 +236,6 @@ function processFolder() {
     writeInstFile "$1"
     writeDSCFile  "$1"
   fi
-  echo "-------------------------------------"
-  echo "-------------------------------------"
 }
 
 # Main function
@@ -230,14 +251,30 @@ function processAllFolders(){
   done
 }
 
+# print the package csv file
 function print(){
   echo ${packageCSVFileStructure[@]} 
   cat package.csv
 }
 
+#---------------#
+# End Functions
+#---------------#
+
 # Choice selection
+# Print to print package.csv
+# Clean to remove all files generated by the script
 if [ $1 = "print" ]; then
   print
+elif [ $1 = "clean" ]; then
+  cleanResultFiles
+elif [ $1 = "--help" ]; then
+  echo "Usage: ./rextract.sh [OPTION]"
+  echo ""
+  echo "  print : print package.csv file"
+  echo "  clean : remove all files generated by the script"
+  echo "  dir : execute the script on the target directory"
+  echo ""
 else
  baseFolderPath=$1
  baseFolderName=$(basename "$folderPath")
