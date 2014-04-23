@@ -76,7 +76,7 @@ function getSrcSize(){
 function getDataFileCount(){
    dir="$1/data" 
    if [ -d "$dir" ]; then
-     allFiles=( $(find "$dir" -iregex '.*\(tab\|txt\|csv\tab.gz\tab.bz2\tab.xz\txt.bz2\txt.xz\txt.gz\csv.gz\csv.bz2\csv.xz\)' -type f) )
+     allFiles=( $(find "$dir" -iregex '.*\(tab\|txt\|csv\|tab.gz\|tab.bz2\|tab.xz\|txt.bz2\|txt.xz\|txt.gz\|csv.gz\|csv.bz2\|csv.xz\)' -type f) )
      echo "${#allFiles[@]}"
    fi
 }
