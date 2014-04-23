@@ -27,6 +27,7 @@ function syraSuite(){
     number=$(syra "$number")
     i=$((i+1))
   done
+  i=$((i+1))
   numberArray[$i]="$number"
   echo "${numberArray[@]}"
 }
@@ -54,15 +55,10 @@ function generateDOTRow(){
   line=""
   tab=($@)
   count="${#tab[@]}"	
-  count=$(($count-2))
-  if [[ count -eq 0 ]]; then
-    line+="2 -> "
-  else
-    for ((i=0; i<count; i=i+2)); do 
-      next=$(($i+1))
-      line+=""${tab[$i]}" -> "${tab[$next]}" -> "
-    done
-  fi
+  count=$(($count-1))
+  for ((i=0; i<count; i=i+1)); do 
+      line+=""${tab[$i]}" -> "
+  done
   line+="1;"
   echo "$line"
 }
