@@ -21,6 +21,7 @@ isARPacket=0
 ignoreSL=0
 declare -a results
 declare -a directories
+declare -a links
 #---------------#
 # End Variables
 #---------------#
@@ -44,7 +45,12 @@ done
 #recursive
 function getAllDirectories(){
   if [ "$ignoreSL" = 0 ]; then
-    directories=( $(find "$1" ! -path '*/\.*' ! -path "$1"  -type dl) )
+    directories=( $(find "$1" ! -path '*/\.*' ! -path "$1"  -type d) )
+    links=( $(find "$1" ! -path '*/\.*' ! -path "$1"  -type l) )
+    for link in "${links[@]}"
+    do
+        directories+=("$link")
+    done
   else
     directories=( $(find "$1" ! -path '*/\.*' ! -path "$1"  -type d) )
   fi
@@ -66,7 +72,7 @@ function getRSize(){
 #return total text line number from text files in src folder
 function getSrcSize(){
   count=0
-  dir="$1/src" 
+  dir="$1/src"
   if [ -d "$dir" ]; then
     allFiles=( $(find "$dir" -type f) )
     for file in "${allFiles[@]}"; do
@@ -136,22 +142,31 @@ function getNumberFiles(){
 }
 
 #check if subfolder exist and if yes if it's not empty
-function checkFolders(){
+function checkEmptyFolders(){
   emptyFolder=0
   # get all the folders in the folder
   for folder in "${folders[@]}"; do
     index=$(getArrayIndex "$folder")
     if [ -d "$1/$folder" ]; then
       fileCount=$(getNumberFiles "$1/$folder")
-      results[$index]=$fileCount
       if [ "$fileCount" = 0 ];then
          emptyFolder=1
       fi
+    fi
+  done
+  echo "$emptyFolder"
+}
+
+function countFilesInFolders(){
+  for folder in "${folders[@]}"; do
+    index=$(getArrayIndex "$folder")
+    if [ -d "$1/$folder" ]; then
+      fileCount=$(getNumberFiles "$1/$folder")
+      results[$index]="$fileCount"
     else
      results[$index]=0
     fi
   done
-  echo "$emptyFolder"
 }
 
 #check if it contains the mandatory files
@@ -224,8 +239,9 @@ function processFolder() {
 
   #check if it is a R packet or not
   isARPacket=$(containsMandatoryFiles "$1")
-  emptyFolder=$(checkFolders "$1")
+  emptyFolder=$(checkEmptyFolders "$1")
   if [ $isARPacket -eq 1 -a $emptyFolder -eq 0 ]; then
+    countFilesInFolders "$1"
     results[0]="$1"
     results[1]=${1##*/} 
     results[2]=$(checkTestFolderExist "$1")
