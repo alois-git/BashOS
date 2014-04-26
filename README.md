@@ -3,11 +3,14 @@ Alois Paulus
 Projet Unix 2013-2014
 ----------------------
 ----------------------
+----------------------
 
 1) Analyse des packets R 
 ------------------------
+------------------------
 
 1.1) Lancer le script
+---------------------
 
 ./rextrat.sh -d pathToFolder
 
@@ -16,6 +19,7 @@ ou bien pour obtenir de l'aide
 ./rextrat.sh -h
 
 1.2) Les arguments
+---------------------
 
 - L: Ignore les liens symboliques 
 - p: Affiche le contenu du fichier package.csv
@@ -24,6 +28,7 @@ ou bien pour obtenir de l'aide
 - d path: Donne le chemin du dossier à examiner
 
 1.3) Structure du script
+---------------------
 
 Mon script est composé de plusieurs fonctions dans le but d'avoir des fonctions courtes et compréhensibles.
 
@@ -39,12 +44,15 @@ La structuture général correspond à :
 
 2) Suite de Syracuse
 ---------------------
+---------------------
 
-1.1) Lancer le script 
+1.1) Lancer le script
+---------------------
 
 ./syracuseGen.sh n
 
 1.2) SyracuseGen.sh
+---------------------
 
 Ce script fait appel au script syracuse.sh pour obtenir la suite de syracuse pour chaque nombre contenu entre 1 et n
 
@@ -53,6 +61,7 @@ et génère les graphiques grâce à la commande dot pour chaqu'une de ces suite
 La commande dot est un utilitaire contenu dans la librarie GraphViz qui permet de générer les graphiques en fichier PNG.
 
 1.3) Syracuse.sh
+---------------------
 
 Il prend en paramètre un entier strictement positif et génère en language dot le graphe d'écrivant les vols de Syracuse pour les suites partant des entiers de 1 à n (n étant le paramètre).
 
@@ -61,6 +70,7 @@ Pour cela j'ai employé un tableau de tableau. Pour chaque nombre je stocke un t
 Ensuite je parcoure ces tableaux de nombre pour générer le fichier dot.
 
 3) Outils  
+-----------
 -----------
 
 - getopts : j'ai employé cet outil pour géré les arguments du script d'analyse des packet R. Il m'a été très utile pour gérer les arguments multiples, non ordonné et avec option.
