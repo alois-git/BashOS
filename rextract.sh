@@ -18,7 +18,8 @@ packageCSVFileStructure=("path" "name" "testsYN" "R" "R_size" "man" "src" "src_s
 results=("path" "name" "testsYN" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
 "tests" "vignettes" "index" "licence" "license" "news")
 isARPacket=0
-ignoreSL=0
+considereSL=0
+searchIndideRPacket=0
 declare -a results
 declare -a directories
 declare -a links
@@ -32,6 +33,7 @@ declare -a links
 #-----------#
 
 #return element index from an array
+# param1: value to search in the array
 function getArrayIndex(){
 value=$1
 for (( i = 0; i < ${#packageCSVFileStructure[@]}; i++ )); do
@@ -43,20 +45,41 @@ done
 
 #get all directories from a directory except current dir and hidden dir
 #recursive
+# param1 : directory path
 function getAllDirectories(){
-  if [ "$ignoreSL" = 0 ]; then
-    directories=( $(find "$1" ! -path '*/\.*' ! -path "$1"  -type d) )
-    links=( $(find "$1" ! -path '*/\.*' ! -path "$1"  -type l) )
+  if [ "$considereSL" = 1 ]; then
+    directories=( $(find "$1" ! -path "$1" -type d) )
+    links=( $(find "$1" ! -path "$1" -type l) )
+    taille="${#directories[@]}"
     for link in "${links[@]}"
     do
-        directories+=("$link")
+        directories[$taille]="$link"
+        ((taille++))
     done
   else
-    directories=( $(find "$1" ! -path '*/\.*' ! -path "$1"  -type d) )
+    directories=( $(find "$1" ! -path "$1" -type d) )
+  fi
+}
+
+# get only the direct children directories from the directory
+# param1 : directory path
+function getDirectories(){
+  if [ "$considereSL" = 1 ]; then
+    directories=( $(find "$1" -maxdepth 1 ! -path "$1" -type d) )
+    links=( $(find "$1" -maxdepth 1  ! -path "$1" -type l) )
+    taille="${#directories[@]}"
+    for link in "${links[@]}"
+    do
+        directories[$taille]="$link"
+        ((taille++))
+    done
+  else
+    directories=( $(find "$1" -maxdepth 1 ! -path "$1" -type d) )
   fi
 }
 
 #return total text line number from .r files in R folder
+# param1: R packet main directory path
 function getRSize(){
   count=0
   if [ -d "$1/R" ]; then
@@ -70,6 +93,7 @@ function getRSize(){
 }
 
 #return total text line number from text files in src folder
+# param1: R packet main directory path
 function getSrcSize(){
   count=0
   dir="$1/src"
@@ -84,6 +108,7 @@ function getSrcSize(){
 }
 
 #return number of file in the data directory
+# param1: R packet main directory path
 function getDataFileCount(){
    dir="$1/data" 
    if [ -d "$dir" ]; then
@@ -93,7 +118,7 @@ function getDataFileCount(){
 }
 
 #return number of files of a specific extension 
-#param1 : folder
+#param1 : directory path
 #param2 : extension
 function getFileCount(){
    dir="$1" 
@@ -104,6 +129,7 @@ function getFileCount(){
 }
 
 #check if the test folder exist and is not empty
+# param1: R packet main directory path
 function checkTestFolderExist(){
   if [[ -d "$1/tests" ]]; then
    fileCount=$(getNumberFiles "$1/tests")
@@ -118,6 +144,8 @@ function checkTestFolderExist(){
 }
 
 #check if a file exist and is not empty
+# param1: directory path
+# param2: file name
 function checkFileExistAndNotEmpty(){
   file="$1/$2"
   if [[ -f "$file" ]]; then
@@ -133,6 +161,7 @@ function checkFileExistAndNotEmpty(){
 }
 
 #return the number of files in a directory
+# param1: directory path
 function getNumberFiles(){
   number=0
   if [ -d "$1" ]; then
@@ -142,6 +171,7 @@ function getNumberFiles(){
 }
 
 #check if subfolder exist and if yes if it's not empty
+# param1: directory path
 function checkEmptyFolders(){
   emptyFolder=0
   # get all the folders in the folder
@@ -157,6 +187,8 @@ function checkEmptyFolders(){
   echo "$emptyFolder"
 }
 
+#check if not folders are empty
+# param1: directory path
 function countFilesInFolders(){
   for folder in "${folders[@]}"; do
     index=$(getArrayIndex "$folder")
@@ -170,7 +202,8 @@ function countFilesInFolders(){
 }
 
 #check if it contains the mandatory files
-#this function is use to check if a folder is a R packet or not
+#and if they are not empty.
+# param1: directory path
 function containsMandatoryFiles(){
   # get all the files in the folder
   containsMandatoryFiles=1
@@ -236,11 +269,6 @@ function cleanResultFiles(){
 #check if the folder is a R packet or not
 #if yes get all the informations and write them to files.
 function processFolder() {
-
-  #check if it is a R packet or not
-  isARPacket=$(containsMandatoryFiles "$1")
-  emptyFolder=$(checkEmptyFolders "$1")
-  if [ $isARPacket -eq 1 -a $emptyFolder -eq 0 ]; then
     countFilesInFolders "$1"
     results[0]="$1"
     results[1]=${1##*/} 
@@ -259,20 +287,31 @@ function processFolder() {
     writePackageCSVFile
     writeInstFile "$1"
     writeDSCFile  "$1"
-  fi
 }
 
-# Main function
-# process all the folders contained in the folder
-# given as parameter
+# process all the folders contained in the folder given as parameter
 function processAllFolders(){
-  # get all the directory
-  cleanResultFiles
-  getAllDirectories "$baseFolderPath"
-  # for each directory
+  getAllDirectories "$1"
   for dir in "${directories[@]}"; do
-    #results[1]=$(basename "$dir")
-    processFolder "$dir"
+      isARPacket=$(containsMandatoryFiles "$dir")
+      emptyFolder=$(checkEmptyFolders "$dir")
+      if [ $isARPacket -eq 1 -a $emptyFolder -eq 0 ]; then
+         processFolder "$dir"
+      fi
+  done
+}
+
+#process recursively directories contained by a directory if it is not a R packet
+function processOneFolder(){
+  getDirectories "$1"
+  for dir in "${directories[@]}"; do
+      isARPacket=$(containsMandatoryFiles "$dir")
+      emptyFolder=$(checkEmptyFolders "$dir")
+      if [ $isARPacket -eq 1 -a $emptyFolder -eq 0 ]; then
+       processFolder "$dir"
+      else
+       processOneFolder "$dir"
+      fi
   done
 }
 
@@ -284,12 +323,14 @@ function print(){
 
 # print the help menu
 function printHelp(){
-  echo "Usage: ./rextract.sh [OPTION]... [FOLDER]"
+  echo "Usage: ./rextract.sh [OPTION]..."
   echo ""
   echo "arguments"
   echo "  -L: Ignore symbolic link"
   echo "  -p: print package.csv file"
   echo "  -c: remove all files generated by the script"
+  echo "  -r: specify to search also inside R packet"
+  echo "  -d path: specify directory path"
   echo ""
 }
 
@@ -298,24 +339,43 @@ function printHelp(){
 #---------------#
 
 # Choice selection
-# Print to print package.csv
-# Clean to remove all files generated by the script
-if [ $# -eq 0 ]
-  then
-    printHelp
-elif [ "$1" = "-p" ]; then
-  print
-elif [ "$1" = "-c" ]; then
-  cleanResultFiles
-elif [ "$1" = "--help" ]; then
-  printHelp
-elif [ "$1" = "-L" ];then
- ignoreSL=1
- baseFolderPath=$2
- processAllFolders
-else
- baseFolderPath=$1
- processAllFolders
-fi
+while getopts ":pchrLd:" opt; do
+  case $opt in
+    p)
+      print
+      exit 0
+      ;;
+    c)
+      cleanResultFiles
+      exit 0
+      ;;
+    L)
+      considereSL=1
+      ;;
+    r)
+      searchIndideRPacket=1
+      ;;
+    d)
+      baseFolderPath=$OPTARG
+      ;;
+    h)
+      printHelp
+      exit 0
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" 
+      printHelp
+      exit 0
+      ;;
+  esac
+done
 
+if [ $searchIndideRPacket -eq 1 ]; then
+ cleanResultFiles
+ processAllFolders $baseFolderPath
+else
+ cleanResultFiles
+ processOneFolder $baseFolderPath
+fi
+exit 0
 
