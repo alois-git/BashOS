@@ -17,11 +17,11 @@ ou bien pour obtenir de l'aide
 
 1.2) Les arguments
 
- -L: Ignore les liens symboliques 
- -p: Affiche le contenu du fichier package.csv
- -c: Supprimer tous les fichiers généré par le script
- -r: Active la recherche de packet R dans un packet R
- -d path: Donne le chemin du dossier à examiner
+- L: Ignore les liens symboliques 
+- p: Affiche le contenu du fichier package.csv
+- c: Supprimer tous les fichiers généré par le script
+- r: Active la recherche de packet R dans un packet R
+- d path: Donne le chemin du dossier à examiner
 
 1.3) Structure du script
 
