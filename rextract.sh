@@ -18,7 +18,7 @@ packageCSVFileStructure=("path" "name" "testsYN" "R" "R_size" "man" "src" "src_s
 results=("path" "name" "testsYN" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
 "tests" "vignettes" "index" "licence" "license" "news")
 isARPacket=0
-considereSL=0
+ignoreSL=0
 searchIndideRPacket=0
 declare -a results
 declare -a directories
@@ -47,7 +47,7 @@ done
 #recursive
 # param1 : directory path
 function getAllDirectories(){
-  if [ "$considereSL" = 1 ]; then
+  if [ "$ignoreSL" = 0 ]; then
     directories=( $(find "$1" ! -path "$1" -type d) )
     links=( $(find "$1" ! -path "$1" -type l) )
     taille="${#directories[@]}"
@@ -64,7 +64,7 @@ function getAllDirectories(){
 # get only the direct children directories from the directory
 # param1 : directory path
 function getDirectories(){
-  if [ "$considereSL" = 1 ]; then
+  if [ "$ignoreSL" = 0 ]; then
     directories=( $(find "$1" -maxdepth 1 ! -path "$1" -type d) )
     links=( $(find "$1" -maxdepth 1  ! -path "$1" -type l) )
     taille="${#directories[@]}"
@@ -107,16 +107,6 @@ function getSrcSize(){
   echo "$count"
 }
 
-#return number of file in the data directory
-# param1: R packet main directory path
-function getDataFileCount(){
-   dir="$1/data" 
-   if [ -d "$dir" ]; then
-     allFiles=( $(find "$dir" -iregex '.*\(tab\|txt\|csv\|tab.gz\|tab.bz2\|tab.xz\|txt.bz2\|txt.xz\|txt.gz\|csv.gz\|csv.bz2\|csv.xz\)' -type f) )
-     echo "${#allFiles[@]}"
-   fi
-}
-
 #return number of files of a specific extension 
 #param1 : directory path
 #param2 : extension
@@ -125,6 +115,8 @@ function getFileCount(){
    if [ -d "$dir" ]; then
      allFiles=( $(find "$dir" -iregex ".*\($2)" -type f) )
      echo "${#allFiles[@]}"
+   else
+     echo 0
    fi
 }
 
@@ -196,7 +188,7 @@ function countFilesInFolders(){
       fileCount=$(getNumberFiles "$1/$folder")
       results[$index]="$fileCount"
     else
-     results[$index]=0
+      results[$index]=0
     fi
   done
 }
@@ -221,9 +213,7 @@ function writePackageCSVFile(){
   line=""
   for folder in "${packageCSVFileStructure[@]}"; do
     index=$(getArrayIndex "$folder")
-    if [[  ${results[$index]} != "" ]] ; then
-        line+="${results[$index]};"
-    fi
+      line+="${results[$index]};"
   done
   echo "$line" >> "$packageFileName"
 }
@@ -237,7 +227,7 @@ function writeInstFile(){
   if [ -d "$dir" ]; then
     allFiles=( $(find "$dir" -type f) )
     for file in "${allFiles[@]}"; do
-      line=$(basename "$file")
+      line=${file##*/} 
       echo "$line" >> "$InstFileName"
     done
   else
@@ -273,13 +263,12 @@ function processFolder() {
     results[0]="$1"
     results[1]=${1##*/} 
     results[2]=$(checkTestFolderExist "$1")
-    results[7]=$(getSrcSize "$1")
     results[4]=$(getRSize "$1") 
-
     results[3]=$(getFileCount "$1/R" 'R\')
     results[5]=$(getFileCount "$1/man" 'Rd\') 
+    results[7]=$(getSrcSize "$1")
+    results[9]=$(getFileCount "$1/data" '(tab\|txt\|csv\|tab.gz\|tab.bz2\|tab.xz\|txt.bz2\|txt.xz\|txt.gz\|csv.gz\|csv.bz2\|csv.xz\)')
     results[11]=$(getFileCount "$1/exec" 'po') 
-    results[9]=$(getFileCount "$1/data" 'tab\')
     results[16]=$(checkFileExistAndNotEmpty "$1" "INDEX")
     results[17]=$(checkFileExistAndNotEmpty "$1" "LICENCE")
     results[18]=$(checkFileExistAndNotEmpty "$1" "LICENSE")
@@ -350,7 +339,7 @@ while getopts ":pchrLd:" opt; do
       exit 0
       ;;
     L)
-      considereSL=1
+      ignoreSL=1
       ;;
     r)
       searchIndideRPacket=1
@@ -369,6 +358,10 @@ while getopts ":pchrLd:" opt; do
       ;;
   esac
 done
+
+if [[ ! "$baseFolderPath" = /* ]]; then
+   baseFolderPath="$PWD/$baseFolderPath"
+fi
 
 if [ $searchIndideRPacket -eq 1 ]; then
  cleanResultFiles
