@@ -306,8 +306,12 @@ function processOneFolder(){
 
 # print the package csv file
 function print(){
-  echo ${packageCSVFileStructure[@]} 
-  cat package.csv
+  if [ -f package.csv ];then
+   echo ${packageCSVFileStructure[@]} 
+   cat package.csv
+  else
+   echo "This folder does not contains package.csv"
+  fi
 }
 
 # print the help menu
