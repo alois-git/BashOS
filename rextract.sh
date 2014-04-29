@@ -43,13 +43,12 @@ for (( i = 0; i < ${#packageCSVFileStructure[@]}; i++ )); do
 done
 }
 
-#get all directories from a directory except current dir and hidden dir
-#recursive
+#get all directories containing mandatoryFiles 
 # param1 : directory path
 function getAllDirectories(){
   if [ "$ignoreSL" = 0 ]; then
-    directories=( $(find "$1" ! -path "$1" -type d) )
-    links=( $(find "$1" ! -path "$1" -type l) )
+    directories=( $(find . -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
+    links=( $(find . -type l -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
     taille="${#directories[@]}"
     for link in "${links[@]}"
     do
@@ -57,7 +56,7 @@ function getAllDirectories(){
         ((taille++))
     done
   else
-    directories=( $(find "$1" ! -path "$1" -type d) )
+    directories=( $(find . -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print)  )
   fi
 }
 
@@ -65,8 +64,8 @@ function getAllDirectories(){
 # param1 : directory path
 function getDirectories(){
   if [ "$ignoreSL" = 0 ]; then
-    directories=( $(find "$1" -maxdepth 1 ! -path "$1" -type d) )
-    links=( $(find "$1" -maxdepth 1  ! -path "$1" -type l) )
+    directories=( $(find "$1" -maxdepth 1 ! -path "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
+    links=( $(find "$1" -maxdepth 1  ! -path "$1" -type l -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
     taille="${#directories[@]}"
     for link in "${links[@]}"
     do
@@ -74,7 +73,7 @@ function getDirectories(){
         ((taille++))
     done
   else
-    directories=( $(find "$1" -maxdepth 1 ! -path "$1" -type d) )
+    directories=( $(find "$1" -maxdepth 1 ! -path "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
   fi
 }
 
@@ -83,11 +82,7 @@ function getDirectories(){
 function getRSize(){
   count=0
   if [ -d "$1/R" ]; then
-    allFiles=( $(find "$1/R" -iregex '.*\(R\)' -type f) )
-    for file in "${allFiles[@]}"; do
-      c=$(cat "$file" | wc -l)
-      count=$(($count+$c))
-    done
+    count=$(( find "$1/R" -iregex '.*\(R\)' -type f -print0 | xargs -0 cat ) | wc -l)
   fi
   echo "$count"
 }
@@ -98,11 +93,7 @@ function getSrcSize(){
   count=0
   dir="$1/src"
   if [ -d "$dir" ]; then
-    allFiles=( $(find "$dir" -type f) )
-    for file in "${allFiles[@]}"; do
-      c=$(cat "$file" | wc -l)
-      count=$(($count+$c))
-    done
+    count=$(( find "$dir" -type f -print0 | xargs -0 cat ) | wc -l)
   fi
   echo "$count"
 }
@@ -113,8 +104,7 @@ function getSrcSize(){
 function getFileCount(){
    dir="$1" 
    if [ -d "$dir" ]; then
-     allFiles=( $(find "$dir" -iregex ".*\($2)" -type f) )
-     echo "${#allFiles[@]}"
+     echo $(( find "$dir" -iregex ".*\($2)" -type f ) | wc -l)
    else
      echo 0
    fi
@@ -167,19 +157,11 @@ function getNumberFiles(){
 function checkEmptyFolders(){
   emptyFolder=0
   # get all the folders in the folder
-  for folder in "${folders[@]}"; do
-    index=$(getArrayIndex "$folder")
-    if [ -d "$1/$folder" ]; then
-      fileCount=$(getNumberFiles "$1/$folder")
-      if [ "$fileCount" = 0 ];then
-         emptyFolder=1
-      fi
-    fi
-  done
+  emptyFolder=$(( find "$1" -mindepth 1 -type d -empty ) | wc -l)
   echo "$emptyFolder"
 }
 
-#check if not folders are empty
+#count the number of file for all the folders
 # param1: directory path
 function countFilesInFolders(){
   for folder in "${folders[@]}"; do
@@ -191,20 +173,6 @@ function countFilesInFolders(){
       results[$index]=0
     fi
   done
-}
-
-#check if it contains the mandatory files
-#and if they are not empty.
-# param1: directory path
-function containsMandatoryFiles(){
-  # get all the files in the folder
-  containsMandatoryFiles=1
-  for file in "${mandatoryFiles[@]}"; do
-    if [ ! -s "$1/$file" ]; then
-      containsMandatoryFiles=0
-    fi
-  done
-  echo $containsMandatoryFiles
 }
 
 #write csv file
@@ -282,9 +250,8 @@ function processFolder() {
 function processAllFolders(){
   getAllDirectories "$1"
   for dir in "${directories[@]}"; do
-      isARPacket=$(containsMandatoryFiles "$dir")
       emptyFolder=$(checkEmptyFolders "$dir")
-      if [ $isARPacket -eq 1 -a $emptyFolder -eq 0 ]; then
+      if [ $emptyFolder -eq 0 ]; then
          processFolder "$dir"
       fi
   done
@@ -294,9 +261,8 @@ function processAllFolders(){
 function processOneFolder(){
   getDirectories "$1"
   for dir in "${directories[@]}"; do
-      isARPacket=$(containsMandatoryFiles "$dir")
       emptyFolder=$(checkEmptyFolders "$dir")
-      if [ $isARPacket -eq 1 -a $emptyFolder -eq 0 ]; then
+      if [ $emptyFolder -eq 0 ]; then
        processFolder "$dir"
       else
        processOneFolder "$dir"
