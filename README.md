@@ -82,3 +82,12 @@ Example : getopts "a" attends l'option -a
           getopts "a:" attends l'option -a avec un argument
           getopts "abc" attends l'option -a ou -b ou -c ou bien une combinaison de ces options.
 
+4) Bibliographie
+------------------
+
+http://cran.r-project.org/doc/manuals/r-release/R-exts.html#Package-structure
+http://askubuntu.com/
+http://stackoverflow.com/
+http://content.hccfl.edu/pollock/unix/findcmd.htm
+
+
