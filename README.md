@@ -28,11 +28,13 @@ ou bien pour obtenir de l'aide
 1.3) Structure du script
 ---------------------
 
-Mon script est composé de plusieurs fonctions génériques pour éviter de devoir maintenir trop de ligne de code. De plus débugger en bash n'est pas des plus facile donc il fallait absolument avoir de petite fonction plus ou moins facile à vérifier.
+Mon script est composé de plusieurs fonctions génériques pour éviter de devoir maintenir trop de ligne de code. De plus débugger en bash n'est pas facile donc il est préférable d'avoir des petites fonctions plus ou moins faciles à vérifier.
 
 Chaque fonction est documentée dans le script, je ne les ai donc pas reprises dans le rapport.
 
 Pour ce script comme pour le suivant, j'ai beaucoup employé les tableaux. Car ils m'ont permis de stocker facilement des données et aussi de créer des fonctions génériques, par exemple : la liste des dossiers et des fichiers obligatoires.
+
+La commande "find" m'a été très utile pour chercher des fichiers ou des dossiers répondant à certaines conditions. J'ai égalemment employé les expressions régulière pour chercher les fichiers d'un type spécific.
 
 La structuture générale du script correspond à :
 
@@ -73,8 +75,8 @@ Ensuite je parcours ce tableau de tableau pour générer le fichier DOT.
 
 Le graphique DOT est généré avec le l'option "strict" qui permet d'afficher plusieurs arrêtes en une seule.
 
-3) Outils
-___________
+3) Outils et commandes découverts
+___________________________________
 
 - getopts : j'ai employé cet outil pour gérer les options du script d'analyse des packets R. Il m'a été très utile pour gérer les options multiples, non ordonnées et avec arguments.
 
@@ -84,6 +86,10 @@ Example : getopts "a" attends l'option -a
           getopts "a:" attends l'option -a avec un argument
           getopts "abc" attends l'option -a ou -b ou -c ou bien une combinaison de ces options.
 
+- xargs : j'ai employé cette commande pour compter le nombre de ligne total d'une liste de fichier.
+
+xargs est une commande qui permet de lire des éléments d'un pipe (ici le résultat du find) délimité par des blanc ou des nouvelles lignes et exécute une commande pour chacun de ces éléments.
+
 4) Bibliographie
 ------------------
 
@@ -91,5 +97,5 @@ http://cran.r-project.org/doc/manuals/r-release/R-exts.html#Package-structure
 http://askubuntu.com/
 http://stackoverflow.com/
 http://content.hccfl.edu/pollock/unix/findcmd.htm
-
+http://www.cyberciti.biz/faq/linux-unix-bsd-xargs-construct-argument-lists-utility/
 
