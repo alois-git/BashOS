@@ -36,12 +36,14 @@ Pour ce script comme pour le suivant, j'ai beaucoup employé les tableaux. Car i
 
 La structuture générale du script correspond à :
 
-Récupérer tous les dossiers contenus dans le dossier donné en paramètre
-Pour chaque dossier :
-    1) vérifier si c'est un packet R
-    2) si oui, traiter ce dossier
-    3) si non/oui (dependant du paramètre -r) rechercher si il contient des packets R
-Fin
+1) Récupérer tous les dossiers contenant les fichiers obligatoires dans le dossier donné en paramètre.
+(Attention si paramètre -r, on cherche dans tous les descendant sinon on cherche uniquement dans les descendant direct du dossier)
+
+2) Pour chaque dossier :
+    - Vérifier si c'est un packet R: si il a des folders optionnels ils ne sont pas vide ...
+    - Si oui, traiter ce dossier: compter le nombre de fichiers R, le nombres de fichiers sources, écritures dans les différents fichiers.
+    - Si non/oui (dependant du paramètre -r) rechercher si il contient des packets R
+3) Fin
 
 
 2) Suite de Syracuse
