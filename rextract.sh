@@ -12,7 +12,6 @@
 packageFileName="package.csv"
 mandatoryFiles=('DESCRIPTION' 'NAMESPACE')
 folders=("R" "data" "demo" "exec" "inst" "man" "po" "src" "tests" "tools" "vignettes")
-optionalFiles=("INDEX" "configure" "cleanup" "LICENCE" "LICENSE" "NEWS")
 packageCSVFileStructure=("path" "name" "testsYN" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
 "tests" "vignettes" "index" "licence" "license" "news")
 results=("path" "name" "testsYN" "R" "R_size" "man" "src" "src_size" "demo" "data" "exec" "po" "tools" "inst"
@@ -47,8 +46,8 @@ done
 # param1 : directory path
 function getAllDirectories(){
   if [ "$ignoreSL" = 0 ]; then
-    directories=( $(find . -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
-    links=( $(find . -type l -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
+    directories=( $(find "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
+    links=( $(find "$1" -type l -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
     taille="${#directories[@]}"
     for link in "${links[@]}"
     do
@@ -56,7 +55,7 @@ function getAllDirectories(){
         ((taille++))
     done
   else
-    directories=( $(find . -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print)  )
+    directories=( $(find "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print)  )
   fi
 }
 
@@ -113,10 +112,9 @@ function getFileCount(){
 #check if the test folder exist and is not empty
 # param1: R packet main directory path
 function checkTestFolderExist(){
-  if [[ -d "$1/tests" ]]; then
-   fileCount=$(getNumberFiles "$1/tests")
-   if [[ $fileCount -gt 0 ]]; then
-     echo "y"
+  if [ -d "$1/tests" ]; then
+   if [ "$(ls -A $1/tests )" ];then
+        echo "y"
    else
      echo "n"
    fi
@@ -130,13 +128,8 @@ function checkTestFolderExist(){
 # param2: file name
 function checkFileExistAndNotEmpty(){
   file="$1/$2"
-  if [[ -f "$file" ]]; then
-   count=$(cat "$file" | wc -l)
-   if [[ $count -gt 0 ]]; then
-     echo "y"
-   else
-     echo "n"
-   fi
+  if [[ -s "$file" ]]; then
+   echo "y"
   else
    echo "n"
   fi
@@ -156,8 +149,13 @@ function getNumberFiles(){
 # param1: directory path
 function checkEmptyFolders(){
   emptyFolder=0
-  # get all the folders in the folder
-  emptyFolder=$(( find "$1" -mindepth 1 -type d -empty ) | wc -l)
+  for folder in "${folders[@]}"; do
+    if [ -d "$1/$folder" ]; then
+      if [ ! "$(ls -A "$1/$folder")" ];then
+         emptyFolder=1
+      fi
+    fi
+  done
   echo "$emptyFolder"
 }
 
@@ -166,12 +164,8 @@ function checkEmptyFolders(){
 function countFilesInFolders(){
   for folder in "${folders[@]}"; do
     index=$(getArrayIndex "$folder")
-    if [ -d "$1/$folder" ]; then
-      fileCount=$(getNumberFiles "$1/$folder")
-      results[$index]="$fileCount"
-    else
-      results[$index]=0
-    fi
+    fileCount=$(getNumberFiles "$1/$folder")
+    results[$index]="$fileCount"
   done
 }
 
@@ -181,7 +175,7 @@ function writePackageCSVFile(){
   line=""
   for folder in "${packageCSVFileStructure[@]}"; do
     index=$(getArrayIndex "$folder")
-      line+="${results[$index]};"
+    line+="${results[$index]};"
   done
   echo "$line" >> "$packageFileName"
 }
@@ -193,11 +187,7 @@ function writeInstFile(){
   line=""
   dir="$1/inst"
   if [ -d "$dir" ]; then
-    allFiles=( $(find "$dir" -type f) )
-    for file in "${allFiles[@]}"; do
-      line=${file##*/} 
-      echo "$line" >> "$InstFileName"
-    done
+    find "$dir" -type f -printf "%f\n" >> "$InstFileName"
   else
     touch "$InstFileName"
   fi
