@@ -112,15 +112,12 @@ function getFileCount(){
 #check if the test folder exist and is not empty
 # param1: R packet main directory path
 function checkTestFolderExist(){
-  if [ -d "$1/tests" ]; then
-   if [ "$(ls -A $1/tests )" ];then
-        echo "y"
+   fileCount=$(getNumberFiles "$1/tests")
+   if [[ $fileCount -gt 0 ]]; then
+     echo "y"
    else
      echo "n"
    fi
-  else
-   echo "n"
-  fi
 }
 
 #check if a file exist and is not empty
@@ -151,7 +148,8 @@ function checkEmptyFolders(){
   emptyFolder=0
   for folder in "${folders[@]}"; do
     if [ -d "$1/$folder" ]; then
-      if [ ! "$(ls -A "$1/$folder")" ];then
+      fileCount=$(getNumberFiles "$1/$folder")
+      if [ $fileCount -eq 0 ]; then
          emptyFolder=1
       fi
     fi
@@ -325,10 +323,10 @@ fi
 
 if [ $searchIndideRPacket -eq 1 ]; then
  cleanResultFiles
- processAllFolders $baseFolderPath
+ processOneFolder $baseFolderPath
 else
  cleanResultFiles
- processOneFolder $baseFolderPath
+ processAllFolders $baseFolderPath
 fi
 exit 0
 
