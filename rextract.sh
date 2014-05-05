@@ -45,35 +45,37 @@ done
 #get all directories containing mandatoryFiles 
 # param1 : directory path
 function getAllDirectories(){
+  declare -a directoriesTemp
+  maxdepth=""
+  if [ $2 -eq 1 ];then
+    maxdepth="-maxdepth 1"
+  fi
+  taille=0
   if [ "$ignoreSL" = 0 ]; then
-    directories=( $(find "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
-    links=( $(find "$1" -type l -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
-    taille="${#directories[@]}"
+    directoriesTemp=( $(find "$1" $maxdepth ! -path "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
+    links=( $(find "$1" $maxdepth ! -path "$1" -type l -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
     for link in "${links[@]}"
     do
-        directories[$taille]="$link"
-        ((taille++))
+        description=$(( find "$link" -name "DESCRIPTION" ! -empty) | wc -l)
+        namespace=$(( find "$link" -name "NAMESPACE" ! -empty) | wc -l)
+        if [ $description -gt 0 -a $namespace -gt 0 ];then
+          directories[$taille]="$link"
+          ((taille++))
+        fi
     done
   else
-    directories=( $(find "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print)  )
+    directoriesTemp=( $(find "$1" $maxdepth ! -path "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print)  )
   fi
-}
 
-# get only the direct children directories from the directory
-# param1 : directory path
-function getDirectories(){
-  if [ "$ignoreSL" = 0 ]; then
-    directories=( $(find "$1" -maxdepth 1 ! -path "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
-    links=( $(find "$1" -maxdepth 1  ! -path "$1" -type l -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
-    taille="${#directories[@]}"
-    for link in "${links[@]}"
-    do
-        directories[$taille]="$link"
-        ((taille++))
-    done
-  else
-    directories=( $(find "$1" -maxdepth 1 ! -path "$1" -type d -exec test -e "{}/DESCRIPTION" \; -exec test -e "{}/NAMESPACE" \; -print) )
-  fi
+  for dir in "${directoriesTemp[@]}"
+  do
+        description=$(( find "$dir" -name "DESCRIPTION" ! -empty) | wc -l)
+        namespace=$(( find "$dir" -name "NAMESPACE" ! -empty) | wc -l)
+        if [ $description -gt 0 -a $namespace -gt 0 ];then
+          directories[$taille]="$dir"
+          ((taille++))
+        fi
+  done
 }
 
 #return total text line number from .r files in R folder
@@ -236,7 +238,7 @@ function processFolder() {
 
 # process all the folders contained in the folder given as parameter
 function processAllFolders(){
-  getAllDirectories "$1"
+  getAllDirectories "$1" 0
   for dir in "${directories[@]}"; do
       emptyFolder=$(checkEmptyFolders "$dir")
       if [ $emptyFolder -eq 0 ]; then
@@ -247,7 +249,7 @@ function processAllFolders(){
 
 #process recursively directories contained by a directory if it is not a R packet
 function processOneFolder(){
-  getDirectories "$1"
+  getAllDirectories "$1" 1
   for dir in "${directories[@]}"; do
       emptyFolder=$(checkEmptyFolders "$dir")
       if [ $emptyFolder -eq 0 ]; then
