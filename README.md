@@ -34,7 +34,7 @@ Chaque fonction est documentée dans le script, je ne les ai donc pas reprises d
 
 Pour ce script comme pour le suivant, j'ai beaucoup employé les tableaux. Car ils m'ont permis de stocker facilement des données et aussi de créer des fonctions génériques, par exemple : la liste des dossiers et des fichiers obligatoires.
 
-La commande "find" m'a été très utile pour chercher des fichiers ou des dossiers répondant à certaines conditions. J'ai égalemment employé les expressions régulière pour chercher les fichiers d'un type spécific.
+La commande "find" m'a été très utile pour chercher des fichiers ou des dossiers répondant à certaines conditions. J'ai égalemment employé les expressions régulière pour chercher les fichiers d'un type spécifique.
 
 La structuture générale du script correspond à :
 
